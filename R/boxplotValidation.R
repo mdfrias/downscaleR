@@ -5,6 +5,7 @@
 #' @param mm.obj A multi-member object with predictions, either a field or a multi-member station object as a result of
 #' downscaling of a forecast using station data. See details.
 #' @param obs The benchmarking observations for forecast verification
+#' @param year.target Year selected to plot the probability of the tercile in bars
 #' @param boxplot Logical flag indicating whether a boxplot should be added to the graph. Default is TRUE
 #' @param violin  Logical flag indicating whether a violin plot should be added to the graph instead of the boxplot. 
 #' Default is FALSE

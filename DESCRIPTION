@@ -11,10 +11,11 @@ Imports:
     fields,
     MASS,
     verification,
-    scales
+    scales,
+    RColorBrewer,
+    vioplot
 Suggests:
     ecomsUDG.Raccess,
-    R.VALUE
 Type: Package
 Title: Climate data manipulation and statistical downscaling
 Version: 0.5-2
