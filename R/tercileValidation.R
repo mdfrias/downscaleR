@@ -190,12 +190,12 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       }
       
       if (color.pal=="rgb"){
-          par(oma = c(0, 0, 0, 8))
+          par(oma = c(0, 0, 0, 9))
           image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=blues, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
           image(yy, c(-0.5,0.5), matrix(cofinogram.data[,2]), breaks=brks, col=greens, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
           image(yy, c(0.5,1.5), matrix(cofinogram.data[,3]), breaks=brks, col=reds, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
       } else{
-         par(oma = c(0, 0, 0, 6))
+         par(oma = c(0, 0, 0, 7))
          image(yy, c(-1,0,1), cofinogram.data, breaks=brks, col=cbar, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
       }         
       axis(1, at = yy, pos=-1.5)      
@@ -212,17 +212,19 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       # Add skill score values to the plot
       axis(4, at=-1:1, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="2")
       if (color.pal=="rgb"){ 
-          par(oma = c(0, 0, 0, 5.7))
-          mtext("ROCSS", side=3, line=-0.5, adj=1, font=2)          
+          par(oma = c(5, 0, 2, 6.2))
+          mtext("ROCSS", side=3, line=-5.5, adj=1, font=2)  
+          par(oma = c(7, 0, 2, 5.7))
           image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = reds, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
-          par(oma = c(0, 0, 0, 4.2))
+          par(oma = c(7, 0, 2, 4.2))
           image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = greens, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
-          par(oma = c(0, 0, 0, 2.7))
+          par(oma = c(7, 0, 2, 2.7))
           image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = blues, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")          
       } else{          
-          par(oma = c(0, 0, 0, 3.2))
+          par(oma = c(5, 0, 2, 3.2))
           image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")  
-          mtext("ROCSS", side=3, line=-1.5, adj=1, font=2)
+          par(oma = c(4, 0, 3, 4))
+          mtext("ROCSS", side=3, line=-5.5, adj=1, font=2)
       }          
 }
 # End
