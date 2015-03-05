@@ -5,15 +5,17 @@
 #' @param mm.obj A multi-member object with predictions, either a field or a multi-member station object as a result of
 #' downscaling of a forecast using station data. See details.
 #' @param obs The benchmarking observations for forecast verification
-#' @param stationId In case of multimember multistation objects, one station can be selected to plot
+#' @param stationId In case of multi-member multi-station objects, one station can be selected to plot
 #'  the diagram. Otherwise ignored.
-#' @param color.pal Color palette for the representation of the probabilities. Default to \code{"ypb"} (yellow-pink-blue),
-#'  suitable for the visualization in black and white printing devices. \code{"reds"} for a white-red transition.
+#' @param color.pal Color palette for the representation of the probabilities. Default to \code{"bw"} (black and white).
+#'  \code{"reds"} for a white-red transition or \code{"bgr"} for a colorbar for each tercile, blue-green-red
+#'  for below, normal and above terciles, respectively.
 #' 
 #' @importFrom abind asub
+#' @importFrom RColorBrewer brewer.pal
 #' @importFrom verification roc.area
 #' @importFrom fields image.plot
-#' 
+#'   
 #' @export
 #' 
 #' @details 
@@ -21,9 +23,10 @@
 #' For each member, the daily predictions are averaged to obtain a single seasonal forecast. For
 #' rectangular spatial domains (i.e., for fields), the spatial average is first computed (with a warning) to obtain a
 #' unique series for the whole domain. The corresponding terciles for each ensemble member are then computed
-#' for the analysis period. Thus, data is converted converted to a series of tercile categories by considering values
-#'  above, between or below the terciles of the whole period. The probability of a member to fall into the observed tercile
-#'  is represented by the colorbar. For instance, probabilities below 1/3 are very low, indicating that a minority of the members 
+#' for the analysis period. Thus, each particular member and season, are categorized into three categories (above, 
+#' between or below), according to their respective climatological terciles. Then, a probabilistic forecast is computed 
+#' year by year by considering the number of members falling within each category. This probability is represented by the
+#' colorbar. For instance, probabilities below 1/3 are very low, indicating that a minority of the members 
 #'  falls in the tercile. Conversely, probabilities above 2/3 indicate a high level of member agreement (more than 66\% of members
 #'  falling in the same tercile). The observed terciles (the events that actually occurred) are represented by the white circles.
 #'  
@@ -32,14 +35,14 @@
 #'  (Joliffe and Stephenson 2003). The value of this score ranges from 1 (perfect forecast system) to -1 
 #'  (perfectly bad forecast system). A value zero indicates no skill compared with a random prediction.
 #'  
-#'  In case of multimember fields, the field is spatially averaged to obtain one single time series
+#'  In case of multi-member fields, the field is spatially averaged to obtain one single time series
 #'  for each member prior to data analysis, with a warning. In case of multimember stations, one single station
 #'  can be selected through the \code{stationId} argument, otherwise all station series are also averaged.
 #'   
 #' 
 #' @note The computation of climatological terciles requires a representative period to obtain meaningful results.
 #' 
-#' @author J. Bedia \email{joaquin.bedia@@gmail.com}, M.D. Frias and J, Fernandez based on the original diagram 
+#' @author M.D. Frias, J. Fernandez and J. Bedia \email{joaquin.bedia@@gmail.com} based on the original diagram 
 #' conceived by A. Cofino.
 #' 
 #' @family visualization
@@ -50,11 +53,11 @@
 #'  Tellus A 63, 757-762. doi:10.1111/j.1600-0870.2011.00523.x
 #'    
 #'  Jolliffe, I. T. and Stephenson, D. B. 2003. Forecast Verification: A Practitioner's Guide in 
-#'  Atmospheric Science, Wiley, NY
+#'  Atmospheri Science, Wiley, NY
 #'  
 
-tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("ypb", "reds")) {
-      color.pal <- match.arg(color.pal, c("ypb", "reds"))
+tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw", "reds", "rgb")){
+      color.pal <- match.arg(color.pal, c("bw", "reds", "rgb"))
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {
@@ -170,13 +173,32 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("ypb"
       obs.t.m <- obs.mean >= obs.terciles[1] & obs.mean <= obs.terciles[2]
       obs.t <- obs.t.u*1+obs.t.l*-1
       # Color selection
-      cbar <- switch(color.pal,
-               "ypb" = rev(c("#000066FF","#0000C1FF","#1600FFFF","#5D00FFFF","#A412EDFF","#EB3FC0FF","#FF6D92FF","#FF9A65FF","#FFC738FF","#FFF50AFF")),
-               "reds" = c("#FFFFFF","#FFF5F0","#FEE0D2","#FCBBA1","#FC9272","#FB6A4A","#EF3B2C", "#CB181D","#A50F15","#67000D"))
-      brks <- c(seq(0,1,length=length(cbar)+1))
-      par(oma = c(0, 0, 0, 6))
-      image(yy, c(-1,0,1), cofinogram.data, breaks=brks, col=cbar, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)
-      axis(1, at = yy)      
+      if (color.pal=="rgb"){
+          reds <- brewer.pal(8,"Reds")
+          reds <- c(reds[1],reds[1],reds)
+          greens <- brewer.pal(8,"Greens")
+          greens <- c(greens[1],greens[1],greens)
+          blues <- brewer.pal(8,"Blues")
+          blues <- c(blues[1],blues[1],blues)        
+          brks <- c(seq(0,1,length=length(reds)+1))
+      } else {
+          cbar <- switch(color.pal, 
+              "reds" <- c("#fff5f0", "#fff5f0", brewer.pal(8,"Reds")),
+              "bw" = rev(grey.colors(10))
+         )
+         brks <- c(seq(0,1,length=length(cbar)+1))
+      }
+      
+      if (color.pal=="rgb"){
+          par(oma = c(0, 0, 0, 8))
+          image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=blues, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
+          image(yy, c(-0.5,0.5), matrix(cofinogram.data[,2]), breaks=brks, col=greens, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
+          image(yy, c(0.5,1.5), matrix(cofinogram.data[,3]), breaks=brks, col=reds, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
+      } else{
+         par(oma = c(0, 0, 0, 6))
+         image(yy, c(-1,0,1), cofinogram.data, breaks=brks, col=cbar, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
+      }         
+      axis(1, at = yy, pos=-1.5)      
       points(yy, obs.t, pch = 21, bg = "white")
       axis(2, at=-1:1, labels=c("Below", "Normal", "Above"), las="2")
       # Area underneath a ROC curve
@@ -189,8 +211,18 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("ypb"
       rocss.t.m <- roca.t.m$A*2-1
       # Add skill score values to the plot
       axis(4, at=-1:1, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="2")
-      par(oma = c(0, 0, 0, 3))
-      image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Prob")
-      mtext("ROCSS", side=3, line=-1.5, adj=1, font=2)
+      if (color.pal=="rgb"){ 
+          par(oma = c(0, 0, 0, 5.7))
+          mtext("ROCSS", side=3, line=-0.5, adj=1, font=2)          
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = reds, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
+          par(oma = c(0, 0, 0, 4.2))
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = greens, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
+          par(oma = c(0, 0, 0, 2.7))
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = blues, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")          
+      } else{          
+          par(oma = c(0, 0, 0, 3.2))
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")  
+          mtext("ROCSS", side=3, line=-1.5, adj=1, font=2)
+      }          
 }
 # End
