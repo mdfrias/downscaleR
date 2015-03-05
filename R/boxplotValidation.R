@@ -18,7 +18,7 @@
 #' 
 #' @importFrom abind asub
 #' @importFrom verification roc.area
-#' @importFrom vioplot vioplot
+#' @import vioplot
 #'   
 #' @export
 #' 

@@ -3,6 +3,7 @@ Depends:
     rJava,
     downscaleR.java,
     maps,
+    vioplot,
     R(>= 3.0.0)
 Imports:
     utils,
@@ -12,8 +13,7 @@ Imports:
     MASS,
     verification,
     scales,
-    RColorBrewer,
-    vioplot
+    RColorBrewer
 Suggests:
     ecomsUDG.Raccess,
 Type: Package
