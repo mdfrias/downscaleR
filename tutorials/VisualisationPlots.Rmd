@@ -15,29 +15,28 @@ This document shows some sample R functions to visualize seasonal forecast infor
 
 ## Requirements
 
-The functions have been incorporated into the development branch of downscaleR. Get the latest version using the following code. This has to be done **just once**. 
+The functions have been incorporated into the development branch of downscaleR. Get the latest version using the following code. This has to be done **just once** in this order: 
 
 ```{r eval=FALSE}
 library(devtools)
-devtools::install_github(c("SantanderMetGroup/downscaleR.java@master",
-                           "SantanderMetGroup/downscaleR@master",
-                           "SantanderMetGroup/ecomsUDG.Raccess@master"))
+install_github("SantanderMetGroup/downscaleR.java@stable")
+install_github("SantanderMetGroup/downscaleR@stable")
+install_github("SantanderMetGroup/ecomsUDG.Raccess@stable")
 ```
 
-We'll need to load some packages and log into the ECOMS UDG: 
+```{r eval=FALSE, echo=FALSE}
+install_github("mdfrias/downscaleR")
+```
 
-```{r message=FALSE, warning=FALSE}
+We'll need to load some packages and log into the ECOMS UDG to download the data: 
+
+```{r}
 library(downscaleR)
 library(ecomsUDG.Raccess)
-library(verification)
-library(RColorBrewer)
-library(scales)
-library(vioplot)
-
 loginECOMS_UDG("username", "password")
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=FALSE}
 loginECOMS_UDG("dfrias", "friasmd")
 ```
 
@@ -49,7 +48,7 @@ We can load some sample data from the ECOMS-UDG. E.g. for surface temperature:
 var <- "tas"
 year.ini <- 1991
 year.end <- 2000
-year.target <- 1998
+year.target <- 1995
 season <- c(12,1,2)
 lagged.season <- c(8,9,10,11,12,1,2)
 lead.month <- 3
@@ -69,19 +68,59 @@ lonlim <- c(-83,-66)
 latlim <- c(-20,0)
 ```
 
-We are ready to load the predictions and observations. We can use downscaleR functions to interpolate the data to a common grid.
+We are ready to load the predictions and observations. We can use `downscaleR` functions to interpolate the data to a common grid.
 
-```{r cache=FALSE, message=FALSE, warning=FALSE}
+```{r,eval=FALSE}
 prd <- loadECOMS(dataset = "System4_seasonal_15", var=var,
                  lonLim=lonlim, latLim=latlim, season=season, years=year.ini:year.end,
                  leadMonth=lead.month, members=members, time="DD"
 )
+```
+```{r,eval=FALSE,echo=FALSE}
+save(prd, file = "tutorials/prd.Rdata")
+```
+```{r,eval=FALSE}
+## [2015-03-05 18:36:04] Defining homogeneization parameters for variable "tas"
+## [2015-03-05 18:36:09] Defining geo-location parameters
+## [2015-03-05 18:36:09] Defining initialization time parameters
+## [2015-03-05 18:36:10] Retrieving data subset ...
+## [2015-03-05 18:37:28] Done
+```
+```{r,echo=FALSE}
+load("/home/dfrias/github/downscaleR_mdfrias/tutorials/prd.Rdata")
+```
 
+
+```{r,eval=FALSE}
 obs <- loadECOMS(dataset = "WFDEI", var=var,
                  lonLim=lonlim, latLim=latlim, season=season, years=year.ini:year.end
 )
-
+```
+```{r}
+## [2015-03-05 18:41:03] Defining homogeneization parameters for variable "tas"
+## [2015-03-05 18:41:04] Defining geo-location parameters
+## [2015-03-05 18:41:04] Defining time selection parameters
+## [2015-03-05 18:41:04] Retrieving data subset ...
+## [2015-03-05 18:41:21] Done
+```
+```{r, eval=FALSE}
+# Interpolation to model grid
 obs <- interpGridData(obs, new.grid = getGrid(prd), method = "nearest")
+```
+```{r,eval=FALSE}
+## [2015-03-05 18:42:47] Performing nearest interpolation... may take a while
+## [2015-03-05 18:43:05] Done
+## Warning messages:
+## 1: In interpGridData(obs, new.grid = getGrid(prd), method = "nearest") :
+##   The new longitudes are outside the data extent
+## 2: In interpGridData(obs, new.grid = getGrid(prd), method = "nearest") :
+##   The new latitudes are outside the data extent
+```
+```{r,echo=FALSE,eval=FALSE}
+save(obs, file = "tutorials/obs.Rdata")
+```
+```{r,echo=FALSE}
+load("/home/dfrias/github/downscaleR_mdfrias/tutorials/obs.Rdata")
 ```
 
 ## Visualization functions
@@ -94,24 +133,39 @@ tercileBarValidation(prd, obs, year.target)
 
 ### Box plots on climatology fan chart
 
-In this plot the background represents the climatology for the forecast period. The shaded areas show the central tercile (dark shade) and the maximum and minimum (light shade). To avoid overinterpretation of daily peaks, the daily data has beed smoothed by means of a (centered) moving average of 31 days. Therefore, at the location of the boxplots, the background shows the monthly mean forecast (the terciles and extremes being computed over members and years).
+In this plot the background represents the climatology for the forecast period. The shaded areas show the central tercile (dark shade) and the maximum and minimum (light shade). To avoid overinterpretation of daily peaks, the daily data has been smoothed by means of a (centered) moving average of 31 days. Therefore, at the location of the boxplots, the background shows the monthly mean forecast (the terciles and extremes being computed over members and years).
 
 The boxplots show the spread of the monthly mean forecast (for the different members).
 
 ```{r fig.height=3, warning=FALSE}
 boxplotValidation(prd, obs, year.target)
 ```
+You could also add to the boxplot the values of the ensemble members using crosses or any other symbol (pch option).
+
+```{r fig.height=3, warning=FALSE}
+boxplotValidation(prd, obs, year.target, add.points=T)
+boxplotValidation(prd, obs, year.target, add.points=T, pch=19)
+```
 
 The boxplots can be replaced by _violin plots_, to unveil multimodalities in the data.
 
 ```{r fig.height=3, warning=FALSE}
 boxplotValidation(prd, obs, year.target, violin=T)
+boxplotValidation(prd, obs, year.target, violin=T, add.points=T)
+boxplotValidation(prd, obs, year.target, violin=T, add.points=T, pch=21)
+```
+
+It is also possible to plot only the values of the ensemble members. 
+
+```{r fig.height=3, warning=FALSE}
+boxplotValidation(prd, obs, year.target, boxplot=F, violin=F, add.points=T)
 ```
 
 ### Tercile plot
 
-```{r fig.height=3.5, warning=FALSE}
+```{r, warning=FALSE}
 tercileValidation(prd, obs)
+tercileValidation(prd, obs, color.pal="reds")
 tercileValidation(prd, obs, color.pal="rgb")
 ```
 
@@ -119,7 +173,7 @@ tercileValidation(prd, obs, color.pal="rgb")
 
 The bubble plot represents the most likely tercile in colors, the probability of that tercile with the size of the bubble (optional) and the skill of the forecast system for that tercile as transparency of the bubble (optional). Currently, the skill score used is the ROCSS. Only positive scores are shown (the negative ones --the system is worse than the climatology-- are shown as crosses).
 
-```{r echo=FALSE}
+```{r eval=FALSE, echo=FALSE}
 index.mean <- function(X, INDEX){
   return(tapply(X, INDEX=INDEX, FUN=mean, na.rm = TRUE))
 }
@@ -265,7 +319,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score=T, size.as.probabil
 
 The bubbleValidation can be invoked with different levels of complexity:
 
-```{r fig.width=5, fig.height=3, warning=FALSE, message=FALSE}
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
 bubbleValidation(prd, obs, year.target, size.as.probability=F, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=T)
