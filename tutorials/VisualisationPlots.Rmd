@@ -336,4 +336,5 @@ The bubbleValidation can be invoked with different levels of complexity:
 bubbleValidation(prd, obs, year.target, size.as.probability=F, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=T)
+bubbleValidation(prd, obs, year.target, pie=T)
 ```
