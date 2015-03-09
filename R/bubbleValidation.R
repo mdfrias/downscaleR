@@ -131,7 +131,6 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       df$color[df$t.max.prob == 1] <- "blue"
       yx <- as.matrix(expand.grid(y.mm, x.mm))
       nn.yx <- yx[v.nans, ]
-      score = TRUE
       if (score) { # Compute ROCSS
             v.score <- c()
             count <- 1
