@@ -77,7 +77,7 @@ prd <- loadECOMS(dataset = "System4_seasonal_15", var=var,
 )
 ```
 ```{r,eval=FALSE,echo=FALSE}
-save(prd, file = "tutorials/prd.Rdata")
+save(prd, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/prd.Rdata")
 ```
 ```{r,eval=FALSE}
 ## [2015-03-05 18:36:04] Defining homogeneization parameters for variable "tas"
@@ -87,7 +87,7 @@ save(prd, file = "tutorials/prd.Rdata")
 ## [2015-03-05 18:37:28] Done
 ```
 ```{r,echo=FALSE}
-load("/home/dfrias/github/downscaleR_mdfrias/tutorials/prd.Rdata")
+load("/home/dfrias/github/downscaleR_mdfrias/tutorials/prd_spain.Rdata")
 ```
 
 
@@ -113,14 +113,12 @@ obs <- interpGridData(obs, new.grid = getGrid(prd), method = "nearest")
 ## Warning messages:
 ## 1: In interpGridData(obs, new.grid = getGrid(prd), method = "nearest") :
 ##   The new longitudes are outside the data extent
-## 2: In interpGridData(obs, new.grid = getGrid(prd), method = "nearest") :
-##   The new latitudes are outside the data extent
 ```
 ```{r,echo=FALSE,eval=FALSE}
-save(obs, file = "tutorials/obs.Rdata")
+save(obs, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/obs.Rdata")
 ```
 ```{r,echo=FALSE}
-load("/home/dfrias/github/downscaleR_mdfrias/tutorials/obs.Rdata")
+load("/home/dfrias/github/downscaleR_mdfrias/tutorials/obs_spain.Rdata")
 ```
 
 ## Visualization functions
@@ -190,10 +188,25 @@ margin.dim <- function(obj, dims){
   grep(dims, attr(obj$Data, "dimensions"))
 }
 
-bubbleValidation <- function(mm.obj, obs, select.year, score=T, size.as.probability=T) {
-  # Transform both data to the same grid (model grid)
-  obs <- interpGridData(obs, new.grid = getGrid(mm.obj), method = "nearest")  
-  
+bubbleValidation <- function(mm.obj, obs, select.year, score=T, size.as.probability=T) {  
+      mm.dimNames <- attr(mm.obj$Data, "dimensions")
+      obs.dimNames <- attr(obs$Data, "dimensions")
+      if (!("member" %in% mm.dimNames)) {
+            stop("The input data for 'multimember' is not a multimember field")
+      }
+      if ("member" %in% obs.dimNames) {
+            stop("The verifying observations can't be a multimember")
+      }
+      if ("var" %in% mm.dimNames | "var" %in% obs.dimNames) {
+            stop("Multifields are not a valid input")
+      }
+#       if (!("lon" %in% obs.dimNames & "lat" %in% obs.dimNames)) {
+#             stop("The observed reference must have 'lon' and 'lat' dimensions")
+#       }
+      if (!identical(c("time", "lat", "lon"), obs.dimNames)) {
+            stop("The observed reference must be a 3D array of the form [time,lat,lon]")
+      }
+
   x.mm <- mm.obj$xyCoords$x
   y.mm <- mm.obj$xyCoords$y
   arr <- mm.obj$Data
@@ -213,8 +226,8 @@ bubbleValidation <- function(mm.obj, obs, select.year, score=T, size.as.probabil
   terciles <- apply(y.mean, MARGIN=c(2,3,4), FUN=quantile, c(1/3,2/3), na.rm = TRUE)
   # Compute the probability for each tercile
   t.u <- array(data = NaN, dim = dim(y.mean)[1:3])
-  t.l <- array(data = NaN, dim = dim(y.mean)[1:3])
-  t.m <- array(data = NaN, dim = dim(y.mean)[1:3])
+  t.l <- t.u
+  t.m <- t.u
   prob <- array(data = NaN, dim = c(3,dim(y.mean)[1:3]))
   for (i in seq(1,dim(y.mean)[1])) {
       t.u[i,,] <- apply(y.mean[i,,,] > terciles[2,,,], MARGIN=c(1,2), FUN=sum, na.rm = TRUE)/n.mem
@@ -235,8 +248,8 @@ bubbleValidation <- function(mm.obj, obs, select.year, score=T, size.as.probabil
   obs.y.mean <- apply(arr.obs, MARGIN=c(2,3), FUN=index.mean, INDEX=yrs)
   obs.terciles <- apply(obs.y.mean, MARGIN=c(2,3), FUN=quantile, c(1/3,2/3), na.rm=TRUE)    
   obs.t.u <- array(data = NaN, dim = dim(obs.y.mean))
-  obs.t.l <- array(data = NaN, dim = dim(obs.y.mean))
-  obs.t.m <- array(data = NaN, dim = dim(obs.y.mean))
+  obs.t.l <- obs.t.u
+  obs.t.m <- obs.t.u
   for (i in seq(1,dim(obs.y.mean)[1])) {
     obs.t.u[i,,] <- (obs.y.mean[i,,] > obs.terciles[2,,])
     obs.t.l[i,,] <- (obs.y.mean[i,,] < obs.terciles[1,,])

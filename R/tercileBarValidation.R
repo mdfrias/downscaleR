@@ -209,6 +209,6 @@ tercileBarValidation <- function(mm.obj, obs, year.target, stationId = NULL) {
   abline(h=0.33, col="grey", lwd=4)
   # Add skill score values to the plot
   axis(1, at=c(0.7,1.9,3.1), line=2, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="1", tick=F)
-  mtext("ROCSS:", side=1, line=2, adj=0, font=2)
+  mtext("ROCSS:", side=1, line=3, adj=0, font=2)
 }
 # End

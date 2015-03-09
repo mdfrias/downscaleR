@@ -47,8 +47,7 @@
 #'  
 
 
-bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE) {
-      # Transform both data to the same grid (model grid)
+bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE) {      
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {
@@ -66,7 +65,6 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       if (!identical(c("time", "lat", "lon"), obs.dimNames)) {
             stop("The observed reference must be a 3D array of the form [time,lat,lon]")
       }
-      obs <- interpGridData(obs, new.grid = getGrid(mm.obj), method = "nearest")  
       x.mm <- mm.obj$xyCoords$x
       y.mm <- mm.obj$xyCoords$y
       yrs <- getYearsAsINDEX(mm.obj)
