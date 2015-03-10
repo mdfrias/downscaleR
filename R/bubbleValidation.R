@@ -8,12 +8,15 @@
 #' downscaling of a forecast using station data. See details.
 #' @param obs The benchmarking observations for forecast verification. 
 #' @param select.year Year within the whole verification period to display the results for.
-#' @param score Logical. Whether to include or not the relative operating characteristic skill score (ROCSS). See details.
-#' @param size.as.probability Logical. Whether to include the tercile probabilities (magnitude proportional to bubble radius)
-#'  in the plot. See details. 
+#' @param score Logical indicating if the relative operating characteristic skill score (ROCSS) should be included. See 
+#'  details. Default is TRUE
+#' @param size.as.probability Logical indicating if the tercile probabilities (magnitude proportional to bubble radius) 
+#'  are drawn in the plot. See details. Default is TRUE.
+#' @param pie. Logical flag indicating if pie charts should be plot. Default is FALSE.
 #' 
 #' @importFrom scales alpha
 #' @importFrom verification roc.area
+#' @importFrom mapplots draw.pie
 #' 
 #' @export
 #' 
