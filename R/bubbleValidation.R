@@ -179,7 +179,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
             points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = df$max.prob[pos.val] * 3, col = alpha(df$color[pos.val], v.score[pos.val]), pch = 19, xlab = "", ylab = "")
             #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.75) # To add negative values
       } else {
-            plot(nn.yx[ , 2], nn.yx[ , 1], cex=df$max.prob * 3, col = df$color, pch = 19, xlab = "", ylab = "")
+            points(nn.yx[ , 2], nn.yx[ , 1], cex=df$max.prob * 3, col = df$color, pch = 19, xlab = "", ylab = "")
       }
       world(add = TRUE, interior = FALSE)      
       par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 1), new = TRUE)
