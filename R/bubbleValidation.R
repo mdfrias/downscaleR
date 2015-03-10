@@ -169,7 +169,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       }
       # Bubble plot
       par(bg = "white", mar = c(3, 3, 1, 5))
-      plot(0, xlim=c(min(nn.yx[pos.val, 2]),max(nn.yx[pos.val, 2])), ylim=c(min(nn.yx[pos.val, 1]),max(nn.yx[pos.val, 1])), type="n")
+      plot(0, xlim=c(min(nn.yx[, 2]),max(nn.yx[, 2])), ylim=c(min(nn.yx[, 1]),max(nn.yx[, 1])), type="n")
       if (pie){
           dx <- diff(mm.obj$xyCoords$x[1:2])
           dy <- diff(mm.obj$xyCoords$y[1:2])

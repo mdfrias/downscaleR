@@ -20,12 +20,8 @@ The functions have been incorporated into the development branch of downscaleR. 
 ```{r eval=FALSE}
 library(devtools)
 install_github("SantanderMetGroup/downscaleR.java@stable")
-install_github("SantanderMetGroup/downscaleR@stable")
-install_github("SantanderMetGroup/ecomsUDG.Raccess@stable")
-```
-
-```{r eval=FALSE, echo=FALSE}
 install_github("mdfrias/downscaleR")
+install_github("SantanderMetGroup/ecomsUDG.Raccess@stable")
 ```
 
 We'll need to load some packages and log into the ECOMS UDG to download the data: 
@@ -34,10 +30,6 @@ We'll need to load some packages and log into the ECOMS UDG to download the data
 library(downscaleR)
 library(ecomsUDG.Raccess)
 loginECOMS_UDG("username", "password")
-```
-
-```{r echo=FALSE, eval=FALSE}
-loginECOMS_UDG("dfrias", "friasmd")
 ```
 
 ## Sample data
@@ -173,7 +165,7 @@ The bubble plot represents the most likely tercile in colors, the probability of
 
 The bubbleValidation can be invoked with different levels of complexity:
 
-```{r, eval=FALSE, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE}
 bubbleValidation(prd, obs, year.target, size.as.probability=F, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=F)
 bubbleValidation(prd, obs, year.target, size.as.probability=T, score=T)

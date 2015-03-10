@@ -4,6 +4,7 @@ Depends:
     downscaleR.java,
     maps,
     vioplot,
+    mapplots,
     R(>= 3.0.0)
 Imports:
     utils,
