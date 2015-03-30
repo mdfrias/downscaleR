@@ -134,7 +134,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       df <- data.frame(max.prob = ve.max.prob, t.max.prob = v.t.max.prob[v.nans])
       df$color <- "black"
       df$color[df$t.max.prob == 3] <- "red"
-      df$color[df$t.max.prob == 2] <- "#41ab5d"
+      df$color[df$t.max.prob == 2] <- "darkgrey"
       df$color[df$t.max.prob == 1] <- "blue"
       yx <- as.matrix(expand.grid(y.mm, x.mm))
       nn.yx <- yx[v.nans, ]
@@ -170,21 +170,22 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       # Bubble plot
       par(bg = "white", mar = c(3, 3, 1, 5))
       plot(0, xlim=c(min(nn.yx[, 2]),max(nn.yx[, 2])), ylim=c(min(nn.yx[, 1]),max(nn.yx[, 1])), type="n")
+      symb.size <- (df$max.prob-0.33) * 4
       if (pie){
           dx <- diff(mm.obj$xyCoords$x[1:2])
           dy <- diff(mm.obj$xyCoords$y[1:2])
           radius <- min(dx,dy)/2*0.8
-          draw.pie(nn.yx[pos.val, 2], nn.yx[pos.val, 1],v.prob[pos.val,], radius=radius, init.angle=90, clockwise = F, col=c("blue", "#41ab5d", "red"), border="white")  
+          draw.pie(nn.yx[pos.val, 2], nn.yx[pos.val, 1],v.prob[pos.val,], radius=radius, init.angle=90, clockwise = F, col=c("blue", "darkgrey", "red"), border="white")  
       } else if (score) {
-            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = df$max.prob[pos.val] * 3, col = alpha(df$color[pos.val], v.score[pos.val]), pch = 19, xlab = "", ylab = "")
+            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = symb.size[pos.val], col = alpha(df$color[pos.val], v.score[pos.val]), pch = 16, xlab = "", ylab = "")
             #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.75) # To add negative values
       } else {
-            points(nn.yx[ , 2], nn.yx[ , 1], cex=df$max.prob * 3, col = df$color, pch = 19, xlab = "", ylab = "")
+            points(nn.yx[ , 2], nn.yx[ , 1], cex=symb.size, col = df$color, pch = 16, xlab = "", ylab = "")
       }
       world(add = TRUE, interior = FALSE)      
       par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 1), new = TRUE)
       plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
-      legend('right', c("T1", "T2", "T3"), pch=c(19, 19, 19), col = c("blue", "#41ab5d", "red"), inset = c(0, 0), xpd = TRUE, bty = "n")
+      legend('right', c("T3", "T2", "T1"), pch=c(19, 19, 19), col = c("red", "darkgrey", "blue"), inset = c(0, 0), xpd = TRUE, bty = "n")
       
 }
 # End

@@ -8,7 +8,7 @@
 #' @param stationId In case of multi-member multi-station objects, one station can be selected to plot
 #'  the diagram. Otherwise ignored.
 #' @param color.pal Color palette for the representation of the probabilities. Default to \code{"bw"} (black and white).
-#'  \code{"reds"} for a white-red transition or \code{"bgr"} for a colorbar for each tercile, blue-green-red
+#'  \code{"reds"} for a white-red transition or \code{"tcolor"} for a colorbar for each tercile, blue-grey-red
 #'  for below, normal and above terciles, respectively.
 #' 
 #' @importFrom abind asub
@@ -56,8 +56,8 @@
 #'  Atmospheri Science, Wiley, NY
 #'  
 
-tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw", "reds", "rgb")){
-      color.pal <- match.arg(color.pal, c("bw", "reds", "rgb"))
+tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw", "reds", "tcolor")){
+      color.pal <- match.arg(color.pal, c("bw", "reds", "tcolor"))
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {
@@ -73,14 +73,25 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       is.mm.station <- ifelse(exists("Metadata", where = mm.obj), TRUE, FALSE)
       is.obs.station <- ifelse(exists("Metadata", where = obs), TRUE, FALSE)
       if (identical(mm.dimNames, c("member", "time", "lat", "lon"))) {
-            warning("The results presented are the spatial mean of the input field")
-            lat.dim.index <- grep("lat", mm.dimNames)
-            lon.dim.index <- grep("lon", mm.dimNames)
-            mar <- setdiff(1:length(mm.dimNames), c(lat.dim.index, lon.dim.index))
-            arr <- apply(mm.obj$Data, mar, mean, na.rm = TRUE)
-            attr(arr, "dimensions") <- mm.dimNames[mar]
-            x.mm <- mm.obj$xyCoords$x
-            y.mm <- mm.obj$xyCoords$y
+            if (length(mm.obj$xyCoords$x)==1 & length(mm.obj$xyCoords$y)==1){
+              arr <- mm.obj$Data
+              if (is.mm.station) {
+                x.mm <- mm.obj$xyCoords[ ,1]
+                y.mm <- mm.obj$xyCoords[ ,2]
+              } else {
+                x.mm <- mm.obj$xyCoords$x
+                y.mm <- mm.obj$xyCoords$y
+              }
+            } else{
+              warning("The results presented are the spatial mean of the input field")
+              lat.dim.index <- grep("lat", mm.dimNames)
+              lon.dim.index <- grep("lon", mm.dimNames)
+              mar <- setdiff(1:length(mm.dimNames), c(lat.dim.index, lon.dim.index))
+              arr <- apply(mm.obj$Data, mar, mean, na.rm = TRUE)
+              attr(arr, "dimensions") <- mm.dimNames[mar]
+              x.mm <- mm.obj$xyCoords$x
+              y.mm <- mm.obj$xyCoords$y
+            }
       } else {
             if (identical(mm.dimNames, c("member", "time"))) {
                   arr <- mm.obj$Data
@@ -118,14 +129,18 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       }
       # Preparation of a "time" 1D vector vec for the target 
       if (identical(obs.dimNames, c("time", "lat", "lon"))) {
-            # Spatial consistency check
-            x.obs <- obs$xyCoords$x
-            y.obs <- obs$xyCoords$y
-            lat.dim.index <- grep("lat", obs.dimNames)
-            lon.dim.index <- grep("lon", obs.dimNames)
-            mar <- setdiff(1:length(obs.dimNames), c(lat.dim.index, lon.dim.index))
-            arr.obs <- apply(obs$Data, mar, mean, na.rm = TRUE)
-            attr(arr.obs, "dimensions") <- obs.dimNames[mar]
+            if (length(obs$xyCoords$x)==1 & length(obs$xyCoords$y)==1){
+              arr.obs <- obs$Data
+            } else{
+              # Spatial consistency check
+              x.obs <- obs$xyCoords$x
+              y.obs <- obs$xyCoords$y
+              lat.dim.index <- grep("lat", obs.dimNames)
+              lon.dim.index <- grep("lon", obs.dimNames)
+              mar <- setdiff(1:length(obs.dimNames), c(lat.dim.index, lon.dim.index))
+              arr.obs <- apply(obs$Data, mar, mean, na.rm = TRUE)
+              attr(arr.obs, "dimensions") <- obs.dimNames[mar]
+            }
       } else {
             if (identical(obs.dimNames, "time")) {
                   arr.obs <- obs$Data
@@ -173,14 +188,9 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       obs.t.m <- obs.mean >= obs.terciles[1] & obs.mean <= obs.terciles[2]
       obs.t <- obs.t.u*1+obs.t.l*-1
       # Color selection
-      if (color.pal=="rgb"){
-          reds <- brewer.pal(8,"Reds")
-          reds <- c(reds[1],reds[1],reds)
-          greens <- brewer.pal(8,"Greens")
-          greens <- c(greens[1],greens[1],greens)
-          blues <- brewer.pal(8,"Blues")
-          blues <- c(blues[1],blues[1],blues)        
-          brks <- c(seq(0,1,length=length(reds)+1))
+      if (color.pal=="tcolor"){
+          t.color <- tercileBrewerColorRamp(10)     
+          brks <- c(seq(0,1,length=nrow(t.color)+1))
       } else {
           cbar <- switch(color.pal, 
               "reds" <- c("#fff5f0", "#fff5f0", brewer.pal(8,"Reds")),
@@ -189,11 +199,11 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
          brks <- c(seq(0,1,length=length(cbar)+1))
       }
       
-      if (color.pal=="rgb"){
+      if (color.pal=="tcolor"){
           par(oma = c(0, 0, 0, 9))
-          image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=blues, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
-          image(yy, c(-0.5,0.5), matrix(cofinogram.data[,2]), breaks=brks, col=greens, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
-          image(yy, c(0.5,1.5), matrix(cofinogram.data[,3]), breaks=brks, col=reds, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
+          image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=t.color$low, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
+          image(yy, c(-0.5,0.5), matrix(cofinogram.data[,2]), breaks=brks, col=t.color$middle, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
+          image(yy, c(0.5,1.5), matrix(cofinogram.data[,3]), breaks=brks, col=t.color$high, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
       } else{
          par(oma = c(0, 0, 0, 7))
          image(yy, c(-1,0,1), cofinogram.data, breaks=brks, col=cbar, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
@@ -211,15 +221,15 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       rocss.t.m <- roca.t.m$A*2-1
       # Add skill score values to the plot
       axis(4, at=-1:1, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="2")
-      if (color.pal=="rgb"){ 
+      if (color.pal=="tcolor"){ 
           par(oma = c(5, 0, 2, 6.2))
           mtext("ROCSS", side=3, line=-5.5, adj=1, font=2)  
           par(oma = c(7, 0, 2, 5.7))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = reds, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,3], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
           par(oma = c(7, 0, 2, 4.2))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = greens, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,2], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
           par(oma = c(7, 0, 2, 2.7))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = blues, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")          
+          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = t.color[,1], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")          
       } else{          
           par(oma = c(5, 0, 2, 3.2))
           image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")  

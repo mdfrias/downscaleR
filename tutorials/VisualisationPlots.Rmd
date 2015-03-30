@@ -38,12 +38,12 @@ We can load some sample data from the ECOMS-UDG. E.g. for surface temperature:
 
 ```{r}
 var <- "tas"
-year.ini <- 1991
-year.end <- 2000
-year.target <- 1995
+year.ini <- 1982
+year.end <- 2010
+year.target <- 1998
 season <- c(12,1,2)
 lagged.season <- c(8,9,10,11,12,1,2)
-lead.month <- 3
+lead.month <- 1
 members <- 1:15
 ```
 
@@ -60,6 +60,12 @@ lonlim <- c(-83,-66)
 latlim <- c(-20,0)
 ```
 
+or Ethiopia
+```{r eval=FALSE}
+lonlim <- c(26,62)
+latlim <- c(-6,25)
+```
+
 We are ready to load the predictions and observations. We can use `downscaleR` functions to interpolate the data to a common grid.
 
 ```{r,eval=FALSE}
@@ -69,7 +75,7 @@ prd <- loadECOMS(dataset = "System4_seasonal_15", var=var,
 )
 ```
 ```{r,eval=FALSE,echo=FALSE}
-save(prd, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/prd.Rdata")
+save(prd, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/prd_peru.Rdata")
 ```
 ```{r,eval=FALSE}
 ## [2015-03-05 18:36:04] Defining homogeneization parameters for variable "tas"
@@ -107,7 +113,7 @@ obs <- interpGridData(obs, new.grid = getGrid(prd), method = "nearest")
 ##   The new longitudes are outside the data extent
 ```
 ```{r,echo=FALSE,eval=FALSE}
-save(obs, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/obs.Rdata")
+save(obs, file = "/home/dfrias/github/downscaleR_mdfrias/tutorials/obs_peru.Rdata")
 ```
 ```{r,echo=FALSE}
 load("/home/dfrias/github/downscaleR_mdfrias/tutorials/obs_spain.Rdata")
@@ -120,6 +126,11 @@ load("/home/dfrias/github/downscaleR_mdfrias/tutorials/obs_spain.Rdata")
 ```{r warning=FALSE}
 tercileBarValidation(prd, obs, year.target)
 ```
+Depending on the area, the positive score threshold to be remarked can be different. It is possible to indicate a positive score threshold to highlight in a different color those values of the score above a particular value. 0.5 is the default value. 
+```{r warning=FALSE}
+tercileBarValidation(prd, obs, year.target, score.threshold=0.4)
+```
+
 
 ### Box plots on climatology fan chart
 
@@ -156,7 +167,7 @@ boxplotValidation(prd, obs, year.target, boxplot=F, violin=F, add.points=T)
 ```{r, warning=FALSE}
 tercileValidation(prd, obs)
 tercileValidation(prd, obs, color.pal="reds")
-tercileValidation(prd, obs, color.pal="rgb")
+tercileValidation(prd, obs, color.pal="tcolor")
 ```
 
 ### Bubble plot

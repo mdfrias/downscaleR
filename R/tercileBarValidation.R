@@ -6,6 +6,7 @@
 #' downscaling of a forecast using station data. See details.
 #' @param obs The benchmarking observations for forecast verification
 #' @param year.target Year selected to plot the probability of the tercile in bars
+#' @param score.threshold Threshold to remark high positive score values
 #' @param stationId In case of multi-member multi-station objects, one station can be selected to plot
 #'  the diagram. Otherwise ignored.
 
@@ -24,18 +25,18 @@
 #' for the analysis period. Thus, each particular member and season, are categorized into three categories (above, 
 #' between or below), according to their respective climatological terciles. Then, a probabilistic forecast is computed 
 #' year by year by considering the number of members falling within each category. The probability for the selected year
-#' is represented by high of the bars. The 1/3 probability is plotted by a grey line. For instance, probabilities below this 
+#' is represented by the bars. The 1/3 probability is plotted by a grey line. For instance, probabilities below this 
 #' line are very low, indicating that a minority of the members falls in the tercile. Conversely, probabilities above 2/3 
 #' indicate a high level of member agreement (more than 66\% of members falling in the same tercile). 
 #'  
 #'  Finally, the ROC Skill Score (ROCSS) is indicated at the bottom part of the bar plot for each tercile. It provides a 
 #'  quantitative measure of the forecast skill, and it is commonly used to evaluate the performance of probabilistic systems
 #'  (Joliffe and Stephenson 2003). The value of this score ranges from 1 (perfect forecast system) to -1 
-#'  (perfectly bad forecast system). Zero indicates no skill compared with a random prediction. The lightness of 
-#'  the bars represents the skill (blue, green and red are reserved for below, normal and above categories respectively). 
-#'  Bars in white show ROCSS lower or equal to zero.
+#'  (perfectly bad forecast system). Zero indicates no skill compared with a random prediction. The negative values
+#'  are written in red while high positive values are in blue. The threshold to highlight high positive values can be
+#'  modified with the score.threshold argument.
 #'  
-#'  #'  In case of multi-member fields, the field is spatially averaged to obtain one single time series
+#'  In case of multi-member fields, the field is spatially averaged to obtain one single time series
 #'  for each member prior to data analysis, with a warning. In case of multimember stations, one single station
 #'  can be selected through the \code{stationId} argument, otherwise all station series are also averaged.
 #'   
@@ -51,7 +52,7 @@
 #'  Atmospheri Science, Wiley, NY
 #'
 
-tercileBarValidation <- function(mm.obj, obs, year.target, stationId = NULL) {
+tercileBarValidation <- function(mm.obj, obs, year.target, score.threshold=NULL, stationId = NULL) {
   mm.dimNames <- attr(mm.obj$Data, "dimensions")
   obs.dimNames <- attr(obs$Data, "dimensions")
   if (!("member" %in% mm.dimNames)) {
@@ -175,40 +176,34 @@ tercileBarValidation <- function(mm.obj, obs, year.target, stationId = NULL) {
   rocss.t.l <- roca.t.l$A*2-1
   rocss.t.m <- roca.t.m$A*2-1  
   
-  # Select bar colour according to the score value
-  sel.colour <- function(score.val, tercile){
-    if (score.val<=0){
-      colour <-"#FFFFFF"
-      colour
-    } else{
-        i <- floor(score.val*10)
-        if (tercile=="T1"){
-          blues <- brewer.pal(8,"Blues")
-          blues <- c(blues[1],blues[1],blues,blues[length(blues)])               
-          colour <-blues[i+1]
-          colour
-        } else if (tercile=="T2"){
-          greens <- brewer.pal(8,"Greens")
-          greens <- c(greens[1],greens[1],greens,greens[length(greens)])        
-          colour <-greens[i+1]
-          colour
-        } else{
-          reds <- brewer.pal(8,"Reds")
-          reds <- c(reds[1],reds[1],reds,reds[length(reds)])         
-          colour <-reds[i+1]
-          colour
-        }
-    }
+  # Threshold to write the score with different colors in the plot
+  if (is.null(score.threshold)){
+    threshold <- 0.5
+  } else{
+    threshold <-score.threshold
+  }  
+  color.score <- function(sval){
+    if (sval<0){return("red")}
+    else if (sval>=threshold){return("blue")}
+    else {return("darkgrey")}
   }
   
   # Bars for the selected year
   year.filter <- yy==year.target
   Sys.setlocale("LC_TIME","C") # For the dates in North-American
   title <- paste(unique(months(obs.dates))[1],"to",unique(months(obs.dates))[3], year.target)
-  barplot(cofinogram.data[year.filter,], names.arg=c("Below", "Normal", "Above"), col=c(sel.colour(rocss.t.l, "T1"),sel.colour(rocss.t.m, "T2"),sel.colour(rocss.t.u, "T3")), ylab="Probability of the tercile", ylim=c(0,1), main=title)
-  abline(h=0.33, col="grey", lwd=4)
+  par(oma = c(5, 0, 0, 0))
+  barplot(cofinogram.data[year.filter,], names.arg=c("Below", "Normal", "Above"), col="lightgrey", ylab="Probability of the tercile", ylim=c(0,1), main=title)
+  abline(h=0.33, col="darkgrey", lwd=4)
   # Add skill score values to the plot
-  axis(1, at=c(0.7,1.9,3.1), line=2, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="1", tick=F)
   mtext("ROCSS:", side=1, line=3, adj=0, font=2)
+  mtext(round(rocss.t.l,2), side=1, line=3, at=0.7, font=2, col=color.score(round(rocss.t.l,2)))
+  mtext(round(rocss.t.m,2), side=1, line=3, at=1.9, font=2, col=color.score(round(rocss.t.m,2)))
+  mtext(round(rocss.t.u,2), side=1, line=3, at=3.1, font=2, col=color.score(round(rocss.t.u,2)))
+  # Add legend
+  par(oma = c(1.5, 0, 0, 10))
+  brks <- c(-1,0,threshold,1)
+  cbar <- c("red", "darkgrey", "blue")
+  image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=brks, col = cbar, zlim=c(-1,1), horizontal=T) 
 }
 # End
