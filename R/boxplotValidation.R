@@ -152,7 +152,7 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
       ))
       seadates <- 1:length(unique(days))
       par(bg="white", mar=c(4,4,1,1))
-      plot(seadates, ens.quant[3,], ylim = range(mm.ma, na.rm=T), ty = 'n', ylab = "tas - Daily Mean", xlab = "time", xaxt="n")
+      plot(seadates, ens.quant[3,], ylim = range(mm.ma, na.rm=T), ty = 'n', ylab = paste(mm.obj$Variable$varName,"- Daily Mean"), xlab = "time", xaxt="n")
       polygon(x = c(seadates, rev(seadates)), y = c(ens.quant[1, ], rev(ens.quant[5, ])), border = "transparent", col = rgb(0.2,0.2,0.2,.2))
       polygon(x = c(seadates, rev(seadates)), y = c(ens.quant[2, ], rev(ens.quant[4, ])), border = "transparent", col = rgb(0.3,0.3,0.3,.3))
       lines(seadates, ens.quant[3,], lwd=2)      
@@ -166,7 +166,9 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
       pos.ini <- grep("..01", levels(days)) 
       if (violin) {
         boxplot=FALSE # Uncompatible options
-        vioplot(mm.monmeans[,1], mm.monmeans[,2], mm.monmeans[,3], wex=6, border="black", at=pos.cen, col="grey", add=T)
+        for(i in seq(1,length(pos.cen))){
+          vioplot(mm.monmeans[,i], wex=6, border="black", at=pos.cen[i], col="grey", add=T)
+        }
         axis(1, at=pos.cen, labels=levels(month.index), las="1")
       }       
       if (boxplot){
@@ -174,7 +176,7 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
       }
       if (add.points) {
         # Different color of the points depending on the tercile 
-        color <- matrix(c(rep("#41ab5d",nrow(mm.monmeans)*ncol(mm.monmeans))), ncol=ncol(mm.monmeans), nrow=nrow(mm.monmeans))
+        color <- matrix(c(rep("#353535",nrow(mm.monmeans)*ncol(mm.monmeans))), ncol=ncol(mm.monmeans), nrow=nrow(mm.monmeans))
         for (i in seq(1,ncol(mm.monmeans))){
           color[mm.monmeans[,i]<ens.quant[2, grep("..15", levels(days))[i]],i] <- "blue"
           color[mm.monmeans[,i]>ens.quant[4, grep("..15", levels(days))[i]],i] <- "red"
