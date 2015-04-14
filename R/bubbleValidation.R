@@ -81,45 +81,44 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       member.dim <- grep("member", mm.dimNames)
       time.dim <- grep("time", mm.dimNames)
       n.mem <- dim(mm.obj$Data)[member.dim]
+
       # Computation of terciles and exceedance probabilities
       # yearmean changes the data dimension. time.dim is in the first dimension!!
+
       y.mean <- apply(mm.obj$Data, MARGIN = c(lat.dim, lon.dim, member.dim), FUN = function(x) {
             tapply(x, INDEX = yrs, FUN = mean, na.rm = TRUE)
       })
       terciles <- apply(y.mean, MARGIN=c(2, 3, 4), FUN=quantile, c(1/3, 2/3), na.rm = TRUE)
       # Compute the probability for each tercile
-      t.u <- array(dim = dim(y.mean)[1:3])
-      t.l <- t.u
-      t.m <- t.u
       prob <- array(dim = c(3,dim(y.mean)[1:3]))
       for (i in seq.int(1, dim(y.mean)[1])) {
-            t.u[i, , ] <- apply(y.mean[i, , , ] > terciles[2, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
-            t.l[i, , ] <- apply(y.mean[i, , , ] < terciles[1, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
-            t.m[i, , ] <- 1 - t.u[i, , ] - t.l[i, , ]
-            prob[1, i, , ] <- t.l[i, , ]
-            prob[2, i, , ] <- t.m[i, , ]
-            prob[3, i, , ] <- t.u[i, , ]
+            prob[3, i, , ] <- apply(y.mean[i, , , ] > terciles[2, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
+            prob[1, i, , ] <- apply(y.mean[i, , , ] < terciles[1, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
+            prob[2, i, , ] <- 1 - prob[3, i, , ] - prob[1, i, , ]
       }
-      # Maximum probability from the terciles
-      max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = max, na.rm = TRUE)
+      prob <- ifelse(prob<0,0,prob) # round-off errors lead to some tiny neg. values
       # Tercile for the maximum probability from the terciles
       t.max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = which.max)
+      # ... as index matrix
+      idxmat.max.prob <- cbind(c(t.max.prob), 1:prod(dim(t.max.prob)))
+      # Probability of the most likely tercile
+      # max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = max)
+      dim(prob) <- c(dim(prob)[1], prod(dim(prob)[2:4]))
+      max.prob <- prob[idxmat.max.prob]
+      dim(prob) <- c(dim(prob)[1], dim(t.max.prob))
+      dim(max.prob) <- dim(t.max.prob)
       # Terciles for the observations
       obs.y.mean <- apply(obs$Data, MARGIN = c(2, 3), FUN = function(x) {
             tapply(x, INDEX = yrs, FUN = mean, na.rm = TRUE)
       })
-      obs.terciles <- apply(obs.y.mean, MARGIN = c(2, 3), FUN = quantile, c(1/3, 2/3), na.rm = TRUE)    
-      obs.t.u <- array(dim = dim(obs.y.mean))
-      obs.t.l <- obs.t.u
-      obs.t.m <- obs.t.u
+      obs.terciles <- apply(obs.y.mean, MARGIN = c(2, 3), FUN = quantile, c(1/3, 2/3), na.rm = TRUE)
+      obs.t <- array(dim = dim(obs.y.mean))
       for (i in seq.int(1, dim(obs.y.mean)[1])) {
-            obs.t.u[i, , ] <- (obs.y.mean[i, , ] > obs.terciles[2, , ])
-            obs.t.l[i, , ] <- (obs.y.mean[i, , ] < obs.terciles[1, , ])
-            obs.t.m[i, , ] <- (obs.y.mean[i, , ] >= obs.terciles[1, , ] & obs.y.mean[i, , ] <= obs.terciles[2, , ])
+            obs.t[i, , ] <- (obs.y.mean[i, , ] > obs.terciles[1, , ]) +
+                            (obs.y.mean[i, , ] > obs.terciles[2, , ]) + 1
       }
-      obs.t <- obs.t.u * 1 + obs.t.l * -1 # 1 upper tercile, 0 middle tercile, -1 lower tercile
       # Filter points with observations in model data 
-      # Select a year and eliminate de NaN cases detected for the observations. 
+      # Select a year and remove the NaN cases detected for the observations. 
       v.max.prob <- as.vector(max.prob[iyear, , ])
       v.t.max.prob <- as.vector(t.max.prob[iyear, , ])
       v.nans <- complete.cases(as.vector(obs.t[iyear, , ]))
@@ -138,6 +137,15 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       df$color[df$t.max.prob == 1] <- "blue"
       yx <- as.matrix(expand.grid(y.mm, x.mm))
       nn.yx <- yx[v.nans, ]
+#       if (score) { # Compute ROCSS for all terciles
+#             rocss <- array(dim=dim(prob)[-2]) # no year dim
+#             for (i.tercile in 1:3){
+#                   rocss[i.tercile, , ] <- apply(
+#                        array(c(obs.t==i.tercile, prob[i.tercile, , ,]), dim=c(dim(obs.t),2)),
+#                        MAR=c(2,3),
+#                        FUN=function(x){roc.area(x[,1],x[,2])$A*2-1})
+#             }
+#       }
       if (score) { # Compute ROCSS
             v.score <- c()
             count <- 1
@@ -147,18 +155,8 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
                         if (n.nan == 0){
                               # Compute the score only for the tercile with maximum probability
                               select.tercile <- t.max.prob[iyear,ilat,ilon] 
-                              if (select.tercile == 1){
-                                    res <- suppressWarnings(roc.area(obs.t.l[ , ilat, ilon], t.l[ , ilat, ilon]))
-                                    v.score[count] <- res$A*2-1
-                              } 
-                              if (select.tercile == 2){
-                                    res <- suppressWarnings(roc.area(obs.t.m[ ,ilat, ilon], t.m[ , ilat, ilon]))
-                                    v.score[count] <- res$A*2-1
-                              }
-                              if (select.tercile == 3){
-                                    res <- suppressWarnings(roc.area(obs.t.u[,ilat,ilon], t.u[,ilat,ilon]))
-                                    v.score[count] <- res$A*2-1
-                              }      
+                              res <- suppressWarnings(roc.area(obs.t[ , ilat, ilon]==select.tercile, prob[select.tercile, , ilat, ilon]))
+                              v.score[count] <- res$A*2-1
                               count <- count+1
                         }
                   }  
@@ -167,6 +165,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
             pos.val <- v.score >= 0
             neg.val <- v.score < 0
       }
+     
       # Bubble plot
       par(bg = "white", mar = c(3, 3, 1, 5))
       plot(0, xlim=c(min(nn.yx[, 2]),max(nn.yx[, 2])), ylim=c(min(nn.yx[, 1]),max(nn.yx[, 1])), type="n")
