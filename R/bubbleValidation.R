@@ -68,14 +68,16 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       if (!identical(c("time", "lat", "lon"), obs.dimNames)) {
             stop("The observed reference must be a 3D array of the form [time,lat,lon]")
       }
-      x.mm <- mm.obj$xyCoords$x
-      y.mm <- mm.obj$xyCoords$y
+      x.mm <- mm.obj$xyCoords$x; nx <- length(x.mm)
+      y.mm <- mm.obj$xyCoords$y; ny <- length(y.mm)
       yrs <- getYearsAsINDEX(mm.obj)
       yy <- unique(yrs)
       if (!select.year %in% yy) {
             stop("Target year outside temporal data range")
       }
       iyear <- which(yy[1]:yy[length(yy)] == select.year)
+      # Why not... ?
+      # iyear <- which(yy == select.year)
       lon.dim <- grep("lon", mm.dimNames)
       lat.dim <- grep("lat", mm.dimNames)
       member.dim <- grep("member", mm.dimNames)
@@ -91,7 +93,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       terciles <- apply(y.mean, MARGIN=c(2, 3, 4), FUN=quantile, c(1/3, 2/3), na.rm = TRUE)
       # Compute the probability for each tercile
       prob <- array(dim = c(3,dim(y.mean)[1:3]))
-      for (i in seq.int(1, dim(y.mean)[1])) {
+      for (i in 1:(dim(y.mean)[1]) ){
             prob[3, i, , ] <- apply(y.mean[i, , , ] > terciles[2, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
             prob[1, i, , ] <- apply(y.mean[i, , , ] < terciles[1, , , ], MARGIN = c(1, 2), FUN = sum, na.rm = TRUE) / n.mem
             prob[2, i, , ] <- 1 - prob[3, i, , ] - prob[1, i, , ]
@@ -99,21 +101,17 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       prob <- ifelse(prob<0,0,prob) # round-off errors lead to some tiny neg. values
       # Tercile for the maximum probability from the terciles
       t.max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = which.max)
-      # ... as index matrix
-      idxmat.max.prob <- cbind(c(t.max.prob), 1:prod(dim(t.max.prob)))
+      # ... as index matrix for the target year
+      idxmat.max.prob <- cbind(c(t.max.prob[iyear,,]), 1:prod(dim(t.max.prob[iyear,,])))
       # Probability of the most likely tercile
-      # max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = max)
-      dim(prob) <- c(dim(prob)[1], prod(dim(prob)[2:4]))
-      max.prob <- prob[idxmat.max.prob]
-      dim(prob) <- c(dim(prob)[1], dim(t.max.prob))
-      dim(max.prob) <- dim(t.max.prob)
+      max.prob <- apply(prob, MARGIN = c(2, 3, 4), FUN = max)
       # Terciles for the observations
       obs.y.mean <- apply(obs$Data, MARGIN = c(2, 3), FUN = function(x) {
             tapply(x, INDEX = yrs, FUN = mean, na.rm = TRUE)
       })
       obs.terciles <- apply(obs.y.mean, MARGIN = c(2, 3), FUN = quantile, c(1/3, 2/3), na.rm = TRUE)
       obs.t <- array(dim = dim(obs.y.mean))
-      for (i in seq.int(1, dim(obs.y.mean)[1])) {
+      for (i in 1:(dim(obs.y.mean)[1]) ) {
             obs.t[i, , ] <- (obs.y.mean[i, , ] > obs.terciles[1, , ]) +
                             (obs.y.mean[i, , ] > obs.terciles[2, , ]) + 1
       }
@@ -121,70 +119,71 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       # Select a year and remove the NaN cases detected for the observations. 
       v.max.prob <- as.vector(max.prob[iyear, , ])
       v.t.max.prob <- as.vector(t.max.prob[iyear, , ])
-      v.nans <- complete.cases(as.vector(obs.t[iyear, , ]))
-      ve.max.prob <- v.max.prob[v.nans]
-      v.prob <- array(dim = c(sum(v.nans),3))
-      for (i in seq(1,3)){
-        v.prob[,i] <- as.vector(prob[i,iyear,,])[v.nans]
+      v.valid <- complete.cases(as.vector(obs.t[iyear, , ]))
+      ve.max.prob <- v.max.prob[v.valid]
+      v.prob <- array(dim = c(sum(v.valid),3))
+      for (i in 1:3){
+        v.prob[,i] <- as.vector(prob[i,iyear,,])[v.valid]
       }
       if (!size.as.probability){
             ve.max.prob <- rep(0.5, length(ve.max.prob))
       }
-      df <- data.frame(max.prob = ve.max.prob, t.max.prob = v.t.max.prob[v.nans])
+      df <- data.frame(max.prob = ve.max.prob, t.max.prob = v.t.max.prob[v.valid])
       df$color <- "black"
-      df$color[df$t.max.prob == 3] <- "red"
-      df$color[df$t.max.prob == 2] <- "darkgrey"
-      df$color[df$t.max.prob == 1] <- "blue"
+      t.colors <- c("blue", "darkgrey", "red")
+      df$color[df$t.max.prob == 3] <- t.colors[3]
+      df$color[df$t.max.prob == 2] <- t.colors[2]
+      df$color[df$t.max.prob == 1] <- t.colors[1]
       yx <- as.matrix(expand.grid(y.mm, x.mm))
-      nn.yx <- yx[v.nans, ]
-#       if (score) { # Compute ROCSS for all terciles
-#             rocss <- array(dim=dim(prob)[-2]) # no year dim
-#             for (i.tercile in 1:3){
-#                   rocss[i.tercile, , ] <- apply(
-#                        array(c(obs.t==i.tercile, prob[i.tercile, , ,]), dim=c(dim(obs.t),2)),
-#                        MAR=c(2,3),
-#                        FUN=function(x){roc.area(x[,1],x[,2])$A*2-1})
-#             }
-#       }
-      if (score) { # Compute ROCSS
-            v.score <- c()
-            count <- 1
-            for (ilon in seq(1,length(x.mm))) {
-                  for (ilat in seq(1,length(y.mm))) {
-                        n.nan <- sum(is.na(obs.t[,ilat,ilon]))
-                        if (n.nan == 0){
-                              # Compute the score only for the tercile with maximum probability
-                              select.tercile <- t.max.prob[iyear,ilat,ilon] 
-                              res <- suppressWarnings(roc.area(obs.t[ , ilat, ilon]==select.tercile, prob[select.tercile, , ilat, ilon]))
-                              v.score[count] <- res$A*2-1
-                              count <- count+1
-                        }
-                  }  
+      nn.yx <- yx[v.valid, ]
+      if (score) { # Compute ROCSS for all terciles
+        rocss.fun <- function(o,p){
+          if (length(unique(o))==2){
+            suppressWarnings(roc.area(o,p)$A*2-1)
+          } # ROCSS cannot be computed if all obs are equal.
+          else NA
+        }
+        rocss <- array(dim=dim(prob)[-2]) # no year dim
+            for (i.tercile in 1:3){
+                  rocss[i.tercile, , ] <- apply(
+                       array(c(obs.t==i.tercile, prob[i.tercile, , ,]), dim=c(dim(obs.t),2)),
+                       MAR=c(2,3),
+                       FUN=function(x){rocss.fun(x[,1],x[,2])})
             }
-            # Select positive score values from negative values
-            pos.val <- v.score >= 0
-            neg.val <- v.score < 0
+            if (!pie) { # Select the rocss for the tercile with max prob.
+              savedim <- dim(rocss)
+              dim(rocss) <- c(dim(rocss)[1], prod(dim(rocss)[2:3]))
+              max.rocss <- rocss[idxmat.max.prob]
+              dim(rocss) <- savedim
+              dim(max.rocss) <- savedim[-1]
+              v.score <- c(max.rocss)[v.valid]
+              pos.val <- v.score >= 0
+              neg.val <- v.score < 0
+              flat.val <- is.na(v.score)
+            }
       }
-     
+      
       # Bubble plot
       par(bg = "white", mar = c(3, 3, 1, 5))
-      plot(0, xlim=c(min(nn.yx[, 2]),max(nn.yx[, 2])), ylim=c(min(nn.yx[, 1]),max(nn.yx[, 1])), type="n")
+      plot(0, xlim=range(x.mm), ylim=range(y.mm), type="n")
       symb.size <- (df$max.prob-0.33) * 4
       if (pie){
-          dx <- diff(mm.obj$xyCoords$x[1:2])
-          dy <- diff(mm.obj$xyCoords$y[1:2])
+          dx <- diff(x.mm[1:2])
+          dy <- diff(y.mm[1:2])
           radius <- min(dx,dy)/2*0.8
-          draw.pie(nn.yx[pos.val, 2], nn.yx[pos.val, 1],v.prob[pos.val,], radius=radius, init.angle=90, clockwise = F, col=c("blue", "darkgrey", "red"), border="white")  
+          dim(rocss) <- c(dim(rocss)[1],prod(dim(rocss)[2:3]))
+          col <- 
+          draw.pie(nn.yx[pos.val, 2], nn.yx[pos.val, 1],v.prob[pos.val,], radius=radius, init.angle=90, clockwise = F, col=t.colors, border="white")  
       } else if (score) {
-            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = symb.size[pos.val], col = alpha(df$color[pos.val], v.score[pos.val]), pch = 16, xlab = "", ylab = "")
-            #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.75) # To add negative values
+            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = symb.size[pos.val], col = alpha(df$color[pos.val], 255*v.score[pos.val]), pch = 16, xlab = "", ylab = "")
+            #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.5) # To add negative values
+            #points(nn.yx[flat.val, 2], nn.yx[flat.val, 1], pch=5, cex=0.5) # To add obs constant values
       } else {
             points(nn.yx[ , 2], nn.yx[ , 1], cex=symb.size, col = df$color, pch = 16, xlab = "", ylab = "")
       }
       world(add = TRUE, interior = FALSE)      
       par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 1), new = TRUE)
       plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
-      legend('right', c("T3", "T2", "T1"), pch=c(19, 19, 19), col = c("red", "darkgrey", "blue"), inset = c(0, 0), xpd = TRUE, bty = "n")
-      
+      legend('right', c("T3", "T2", "T1"), pch=c(19, 19, 19), col = rev(t.colors), inset = c(0, 0), xpd = TRUE, bty = "n")      
 }
 # End
