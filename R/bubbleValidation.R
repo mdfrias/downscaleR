@@ -17,6 +17,7 @@
 #' @importFrom scales alpha
 #' @importFrom verification roc.area
 #' @importFrom mapplots draw.pie
+#' @importFrom mapplots add.pie
 #' 
 #' @export
 #' 
@@ -151,18 +152,15 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
                        FUN=function(x){rocss.fun(x[,1],x[,2])})
             }
             if (!pie) { # Select the rocss for the tercile with max prob.
-              savedim <- dim(rocss)
-              dim(rocss) <- c(dim(rocss)[1], prod(dim(rocss)[2:3]))
+              rocss <- unshape(rocss)
               max.rocss <- rocss[idxmat.max.prob]
-              dim(rocss) <- savedim
-              dim(max.rocss) <- savedim[-1]
+              rocss <- deunshape(rocss)
+              dim(max.rocss) <- dim(rocss)[-1]
               v.score <- c(max.rocss)[v.valid]
               pos.val <- v.score >= 0
               neg.val <- v.score < 0
-              flat.val <- is.na(v.score)
             }
       }
-      
       # Bubble plot
       par(bg = "white", mar = c(3, 3, 1, 5))
       plot(0, xlim=range(x.mm), ylim=range(y.mm), type="n")
@@ -171,17 +169,41 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
           dx <- diff(x.mm[1:2])
           dy <- diff(y.mm[1:2])
           radius <- min(dx,dy)/2*0.8
-          dim(rocss) <- c(dim(rocss)[1],prod(dim(rocss)[2:3]))
-          col <- 
-          draw.pie(nn.yx[pos.val, 2], nn.yx[pos.val, 1],v.prob[pos.val,], radius=radius, init.angle=90, clockwise = F, col=t.colors, border="white")  
-      } else if (score) {
-            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = symb.size[pos.val], col = alpha(df$color[pos.val], 255*v.score[pos.val]), pch = 16, xlab = "", ylab = "")
-            #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.5) # To add negative values
-            #points(nn.yx[flat.val, 2], nn.yx[flat.val, 1], pch=5, cex=0.5) # To add obs constant values
+          if (score){
+            rocss <- unshape(rocss)
+            col <- array(dim=dim(rocss))
+            t.colors[2] <- gray(0.2)
+            for (i.tercile in 1:3) {col[i.tercile,] <- alpha(t.colors[i.tercile],255*rocss[i.tercile,])}
+            score.valid <- ! is.na(rocss[1,v.valid])
+          } else {
+            col <- matrix(rep(t.colors, dim(nn.yx)[1]), nrow = 3)
+            score.valid <- rep(TRUE, sum(v.valid))
+          }
+          
+          for (i.loc in which(score.valid)){
+              add.pie(v.prob[i.loc,], nn.yx[i.loc, 2], nn.yx[i.loc, 1], col=col[,i.loc],
+                      radius=radius, init.angle=90, clockwise = F, border="lightgray", labels=NA
+              )  
+          }
+          # Highlight those whose ROCSS cannot be computed due to constant obs conditions (e.g. always dry)
+          for (i.loc in which(!score.valid)){
+            add.pie(v.prob[i.loc,], nn.yx[i.loc, 2], nn.yx[i.loc, 1], col=NA,
+                    radius=radius, init.angle=90, clockwise = F, border="green", labels=NA
+            )  
+          }
       } else {
+        if (score) {
+            points(nn.yx[pos.val, 2], nn.yx[pos.val, 1], cex = symb.size[pos.val], col = alpha(df$color[pos.val], 255*v.score[pos.val]), pch = 16, xlab = "", ylab = "")
+        } else {
             points(nn.yx[ , 2], nn.yx[ , 1], cex=symb.size, col = df$color, pch = 16, xlab = "", ylab = "")
+        }
       }
-      world(add = TRUE, interior = FALSE)      
+      #points(nn.yx[neg.val, 2], nn.yx[neg.val, 1], pch=4, cex=0.5) # To add negative values
+      #flat.val <- is.na(v.score)
+      # 
+      #points(nn.yx[flat.val, 2], nn.yx[flat.val, 1], pch=5, cex=0.5) # To add obs constant values
+      world(add = TRUE, interior = T)      
+      world(add = TRUE, interior = F, lwd=3)    
       par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 1), new = TRUE)
       plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
       legend('right', c("T3", "T2", "T1"), pch=c(19, 19, 19), col = rev(t.colors), inset = c(0, 0), xpd = TRUE, bty = "n")      
