@@ -31,6 +31,10 @@ fldsubsample <- function(dsRobj, one.out.of = 2){
   return(rval)
 }
 
+last <- function(x){
+   return(x[length(x)])
+}
+
 summary.dsRgrid <- function(x){
   cat(sprintf("Variable: %s\n", x$Variable$varName))
   cat("Shape: ", dim(x$Data), "(", attr(x$Data, "dimensions"), ")\n")
