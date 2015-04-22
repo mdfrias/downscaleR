@@ -51,7 +51,7 @@
 #'  
 
 
-bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE, pie = FALSE) {      
+bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE, pie = FALSE, only.at = NULL) {      
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {
@@ -127,7 +127,7 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
         v.prob[,i] <- as.vector(prob[i,iyear,,])[v.valid]
       }
       if (!size.as.probability){
-            ve.max.prob <- rep(0.5, length(ve.max.prob))
+            ve.max.prob <- rep(1, length(ve.max.prob))
       }
       df <- data.frame(max.prob = ve.max.prob, t.max.prob = v.t.max.prob[v.valid])
       df$color <- "black"
@@ -162,8 +162,12 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
             }
       }
       # Bubble plot
-      par(bg = "white", mar = c(3, 3, 1, 5))
+      mons <- unique(months(as.POSIXlt(obs$Dates$start), abbreviate = T))
+      title <- sprintf("%s, %s to %s, %d", obs$Variable$varName, mons[1],last(mons), year.target)
+title <- sprintf("%s, %s to %s, %d", obs$Variable$varName, mons[1],"Sep", year.target)
+      par(bg = "white", mar = c(3, 3, 2, 1))
       plot(0, xlim=range(x.mm), ylim=range(y.mm), type="n")
+      mtext(title, side=3, line=0.5, at=min(x.mm), adj=0, cex=1.2)
       symb.size <- (df$max.prob-0.33) * 4
       if (pie){
           dx <- diff(x.mm[1:2])
@@ -179,13 +183,21 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
             col <- matrix(rep(t.colors, dim(nn.yx)[1]), nrow = 3)
             score.valid <- rep(TRUE, sum(v.valid))
           }
-          
+          if (!is.null(only.at)) {
+            ns <- nrow(only.at$Stations$LonLatCoords)
+            score.valid <- rep(FALSE, length(score.valid))
+            for (i.station in 1:ns){
+              score.valid[which.min((only.at$Stations$LonLatCoords[i.station,1] - nn.yx[,2])^2 +
+                                   (only.at$Stations$LonLatCoords[i.station,2] - nn.yx[,1])^2)] <- TRUE
+            }
+          }
           for (i.loc in which(score.valid)){
               add.pie(v.prob[i.loc,], nn.yx[i.loc, 2], nn.yx[i.loc, 1], col=col[,i.loc],
                       radius=radius, init.angle=90, clockwise = F, border="lightgray", labels=NA
               )  
           }
           # Highlight those whose ROCSS cannot be computed due to constant obs conditions (e.g. always dry)
+          if (!is.null(only.at)) {score.valid <- rep(TRUE, sum(v.valid))}
           for (i.loc in which(!score.valid)){
             add.pie(v.prob[i.loc,], nn.yx[i.loc, 2], nn.yx[i.loc, 1], col=NA,
                     radius=radius, init.angle=90, clockwise = F, border="green", labels=NA
@@ -204,8 +216,8 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       #points(nn.yx[flat.val, 2], nn.yx[flat.val, 1], pch=5, cex=0.5) # To add obs constant values
       world(add = TRUE, interior = T)      
       world(add = TRUE, interior = F, lwd=3)    
-      par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 1), new = TRUE)
+      par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
       plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
-      legend('right', c("T3", "T2", "T1"), pch=c(19, 19, 19), col = rev(t.colors), inset = c(0, 0), xpd = TRUE, bty = "n")      
+      legend('topright', c("Below", "Normal", "Above"), pch=c(19, 19, 19), col = t.colors, horiz = T, inset = c(0, 0), xpd = TRUE, bty = "n")      
 }
 # End
