@@ -150,9 +150,9 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
       ens.quant <- t(do.call("rbind",
                              lapply(unique(days), FUN=function(x){quantile(c(mm.ma[,days==x]), probs=c(0.0,1/3,0.5,2/3,1.0), na.rm=T)})
       ))
-      seadates <- 1:length(unique(days))
+      seadates <- 1:length(unique(days))    
       par(bg="white", mar=c(4,4,1,1))
-      plot(seadates, ens.quant[3,], ylim = range(mm.ma, na.rm=T), ty = 'n', ylab = paste(mm.obj$Variable$varName,"- Daily Mean"), xlab = "time", xaxt="n")
+      plot(seadates, ens.quant[3,], ylim = range(mm.ma, na.rm=T), ty = 'n', ylab = paste(mm.obj$Variable$varName,"- Daily Mean"), xlab = sprintf("time\n(shade: %d to %d, symbols: %d)", obs.dates[1]$year+1900, last(obs.dates)$year+1900, year.target), xaxt="n")
       polygon(x = c(seadates, rev(seadates)), y = c(ens.quant[1, ], rev(ens.quant[5, ])), border = "transparent", col = rgb(0.2,0.2,0.2,.2))
       polygon(x = c(seadates, rev(seadates)), y = c(ens.quant[2, ], rev(ens.quant[4, ])), border = "transparent", col = rgb(0.3,0.3,0.3,.3))
       lines(seadates, ens.quant[3,], lwd=2)      
@@ -169,10 +169,9 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
         for(i in seq(1,length(pos.cen))){
           vioplot(mm.monmeans[,i], wex=6, border="black", at=pos.cen[i], col="grey", add=T)
         }
-        axis(1, at=pos.cen, labels=levels(month.index), las="1")
       }       
       if (boxplot){
-        boxplot(mm.monmeans, boxwex=3, lwd=3, border="black", at=pos.cen, col=rgb(1,0,0,0), add=T)
+        boxplot(mm.monmeans, boxwex=3, lwd=3, border="black", at=pos.cen, col=rgb(1,0,0,0), axes=F, add=T)
       }
       if (add.points) {
         # Different color of the points depending on the tercile 
@@ -186,7 +185,8 @@ boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = F
         }  
         points(rep(pos.cen,each=nmembers), mm.monmeans, col=color, pch=pch)
       }
-      abline(v=pos.ini, lty="dotted")      
+      axis(1, at=pos.cen, labels=levels(month.index), las="1")
+      abline(v=pos.ini, lty="dotted")          
 }
 # End
 
