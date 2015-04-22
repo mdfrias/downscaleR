@@ -198,14 +198,12 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
          )
          brks <- c(seq(0,1,length=length(cbar)+1))
       }
-      
-      if (color.pal=="tcolor"){
-          par(oma = c(0, 0, 0, 9))
+      par(oma = c(0, 0, 0, 3))
+      if (color.pal=="tcolor"){          
           image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=t.color$low, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
           image(yy, c(-0.5,0.5), matrix(cofinogram.data[,2]), breaks=brks, col=t.color$middle, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
           image(yy, c(0.5,1.5), matrix(cofinogram.data[,3]), breaks=brks, col=t.color$high, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE, add=TRUE)      
-      } else{
-         par(oma = c(0, 0, 0, 7))
+      } else{         
          image(yy, c(-1,0,1), cofinogram.data, breaks=brks, col=cbar, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
       }         
       axis(1, at = yy, pos=-1.5)      
@@ -219,22 +217,19 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       rocss.t.u <- roca.t.u$A*2-1
       rocss.t.l <- roca.t.l$A*2-1
       rocss.t.m <- roca.t.m$A*2-1
-      # Add skill score values to the plot
-      axis(4, at=-1:1, labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2)), las="2")
-      if (color.pal=="tcolor"){ 
-          par(oma = c(5, 0, 2, 6.2))
-          mtext("ROCSS", side=3, line=-5.5, adj=1, font=2)  
-          par(oma = c(7, 0, 2, 5.7))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,3], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
-          par(oma = c(7, 0, 2, 4.2))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,2], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1))
-          par(oma = c(7, 0, 2, 2.7))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = t.color[,1], smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")          
+      # Add skill score values to the plot    
+      axis(4, at=c(-1:1,2.3), labels=c(round(rocss.t.l,2), round(rocss.t.m,2), round(rocss.t.u,2), "ROCSS"), las="2", tick = FALSE)
+      if (color.pal=="tcolor"){       
+          #par(oma = c(7, 0, 2, 5.7))
+          image.plot(add = TRUE, horizontal = T, smallplot = c(0.15,0.8,0.3,0.35), legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,3], zlim=c(0,1))
+          #par(oma = c(7, 0, 2, 4.2))
+          image.plot(add = TRUE, horizontal = T, smallplot = c(0.15,0.8,0.23,0.28), legend.only = TRUE, breaks = brks, lab.breaks=c(rep("", length(brks))), col = t.color[,2], zlim=c(0,1))
+          #par(oma = c(7, 0, 2, 2.7))
+          image.plot(add = TRUE, horizontal = T, smallplot = c(0.15,0.8,0.16,0.21), legend.only = TRUE, breaks = brks, col = t.color[,1], zlim=c(0,1), legend.lab="Probability of the tercile")          
       } else{          
-          par(oma = c(5, 0, 2, 3.2))
-          image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")  
-          par(oma = c(4, 0, 3, 4))
-          mtext("ROCSS", side=3, line=-5.5, adj=1, font=2)
+          #par(oma = c(5, 0, 2, 3.2))
+          #image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")            
+          image.plot(add = TRUE, horizontal = T, legend.only = TRUE, breaks = brks, col = cbar, zlim=c(0,1), legend.lab="Probability of the tercile")            
       }          
 }
 # End
