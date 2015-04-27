@@ -4,6 +4,33 @@ alpha <- function(col, alpha){
   rgb(t(col2rgb(col)), alpha=alpha, maxColorValue = 255)
 }
 
+detrend <- function(dsRobj){
+  dsRobj.dimNames <- attr(dsRobj$Data, "dimensions")
+  lon.dim <- grep("lon", dsRobj.dimNames)
+  lat.dim <- grep("lat", dsRobj.dimNames)
+  member.dim <- grep("member", dsRobj.dimNames)
+  time.dim <- grep("time", dsRobj.dimNames)
+  n.mem <- dim(dsRobj$Data)[member.dim]
+  rval <- dsRobj
+  times <- as.POSIXlt(dsRobj$Dates$start)
+  margin <- c(lat.dim, lon.dim, member.dim)
+  detrended <- function(x){
+    if (sum(!is.na(x))==0)
+      return (rep(NA, length(x)))
+    else
+      return(resid(lm(y~t,data.frame(y=x, t=times))))
+  }
+  rval$Data <- apply(dsRobj$Data, MARGIN = margin, FUN = detrended)
+  # Recover the original dimension order
+  newdims <- c("time", dsRobj.dimNames[margin])
+  rval$Data <- aperm(rval$Data, match(dsRobj.dimNames, newdims))
+  attr(rval$Data, "dimensions") <- dsRobj.dimNames
+  rval$Dates$start <- tapply(dsRobj$Dates$start, INDEX=yrs, FUN=min)
+  rval$Dates$end <- tapply(dsRobj$Dates$end, INDEX=yrs, FUN=max)
+  attr(rval$Dates, "season") <- getSeason(dsRobj)
+  return(rval)
+}
+
 deunshape <- function(x){
   dim(x) <- attr(x,"shape")
   attr(x,"shape") <- NULL
