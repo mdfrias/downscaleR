@@ -44,7 +44,7 @@
 #' 
 #' @family visualization
 
-boxplotValidation <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = FALSE, add.points=FALSE, pch=NULL, stationId = NULL) {
+spreadPlot <- function(mm.obj, obs, year.target, boxplot=TRUE, violin = FALSE, add.points=FALSE, pch=NULL, stationId = NULL) {
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {
