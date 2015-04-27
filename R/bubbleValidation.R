@@ -164,7 +164,6 @@ bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.pro
       # Bubble plot
       mons <- unique(months(as.POSIXlt(obs$Dates$start), abbreviate = T))
       title <- sprintf("%s, %s to %s, %d", obs$Variable$varName, mons[1],last(mons), year.target)
-title <- sprintf("%s, %s to %s, %d", obs$Variable$varName, mons[1],"Sep", year.target)
       par(bg = "white", mar = c(3, 3, 2, 1))
       plot(0, xlim=range(x.mm), ylim=range(y.mm), type="n")
       mtext(title, side=3, line=0.5, at=min(x.mm), adj=0, cex=1.2)
