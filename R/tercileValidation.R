@@ -198,6 +198,8 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
          )
          brks <- c(seq(0,1,length=length(cbar)+1))
       }
+      opar <- par(no.readonly=TRUE)
+      par(mar = c(4, 5, 0, 3))
       par(oma = c(0, 0, 0, 3))
       if (color.pal=="tcolor"){          
           image(yy, c(-1.5,-0.5), matrix(cofinogram.data[,1]), breaks=brks, col=t.color$low, ylab="", xlab="", asp = 1, yaxt="n", bty = "n", axes = FALSE)      
@@ -229,7 +231,8 @@ tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw",
       } else{          
           #par(oma = c(5, 0, 2, 3.2))
           #image.plot(add = TRUE, legend.only = TRUE, breaks = brks, col = cbar, smallplot = c(0.96,0.99,0.2,0.8), zlim=c(0,1), legend.lab="Probability of the tercile")            
-          image.plot(add = TRUE, horizontal = T, legend.only = TRUE, breaks = brks, col = cbar, zlim=c(0,1), legend.lab="Probability of the tercile")            
-      }          
+          image.plot(add = TRUE, horizontal = T, smallplot = c(0.15,0.8,0.25,0.33), legend.only = TRUE, breaks = brks, col = cbar, zlim=c(0,1), legend.lab="Probability of the tercile")            
+      }
+      par(opar)
 }
 # End
