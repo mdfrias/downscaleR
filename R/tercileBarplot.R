@@ -52,7 +52,7 @@
 #'  Atmospheri Science, Wiley, NY
 #'
 
-tercileBarValidation <- function(mm.obj, obs, year.target, score.threshold=NULL, stationId = NULL) {
+tercileBarplot <- function(mm.obj, obs, year.target, score.threshold=NULL, stationId = NULL) {
   mm.dimNames <- attr(mm.obj$Data, "dimensions")
   obs.dimNames <- attr(obs$Data, "dimensions")
   if (!("member" %in% mm.dimNames)) {

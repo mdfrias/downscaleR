@@ -51,7 +51,7 @@
 #'  
 
 
-bubbleValidation <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE, pie = FALSE, only.at = NULL) {      
+bubblePlot <- function(mm.obj, obs, select.year, score = TRUE, size.as.probability = TRUE, pie = FALSE, only.at = NULL) {      
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
       if (!("member" %in% mm.dimNames)) {

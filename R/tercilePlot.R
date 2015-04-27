@@ -56,7 +56,7 @@
 #'  Atmospheri Science, Wiley, NY
 #'  
 
-tercileValidation <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw", "reds", "tcolor")){
+tercilePlot <- function(mm.obj, obs, stationId = NULL, color.pal = c("bw", "reds", "tcolor")){
       color.pal <- match.arg(color.pal, c("bw", "reds", "tcolor"))
       mm.dimNames <- attr(mm.obj$Data, "dimensions")
       obs.dimNames <- attr(obs$Data, "dimensions")
