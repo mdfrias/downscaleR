@@ -168,7 +168,11 @@ bubblePlot <- function(mm.obj, obs, select.year, score = TRUE, size.as.probabili
       plot(0, xlim=range(x.mm), ylim=range(y.mm), type="n")
       mtext(title, side=3, line=0.5, at=min(x.mm), adj=0, cex=1.2)
       symb.size <- (df$max.prob-0.33) * 4
+      symb.size.lab1 <- (1-0.33) * 4
+      symb.size.lab075 <- (0.75-0.33) * 4
+      symb.size.lab050 <- (0.5-0.33) * 4
       if (pie){
+          size.as.probability <- F
           dx <- diff(x.mm[1:2])
           dy <- diff(y.mm[1:2])
           radius <- min(dx,dy)/2*0.8
@@ -217,6 +221,10 @@ bubblePlot <- function(mm.obj, obs, select.year, score = TRUE, size.as.probabili
       world(add = TRUE, interior = F, lwd=3)    
       par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0), mar = c(0, 0, 0, 0), new = TRUE)
       plot(0, 0, type = "n", bty = "n", xaxt = "n", yaxt = "n")
-      legend('topright', c("Below", "Normal", "Above"), pch=c(19, 19, 19), col = t.colors, horiz = T, inset = c(0, 0), xpd = TRUE, bty = "n")      
+      if (size.as.probability) {
+        legend('topright', c("Below (50% likelihood)", "Normal (75% likelihood)", "Above (size: 100% likelihood)"), pch=c(19, 19, 19), col = c(t.colors), cex=0.8, pt.cex=c(symb.size.lab050, symb.size.lab075, symb.size.lab1),horiz = T, inset = c(0, 0), xpd = TRUE, bty = "n")      
+      } else {
+        legend('topright', c("Below", "Normal", "Above"), pch=c(19, 19, 19), col = c(t.colors), cex=0.8, horiz = T, inset = c(0, 0), xpd = TRUE, bty = "n")        
+      }
 }
 # End
